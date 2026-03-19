@@ -1,58 +1,214 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * 이전에는 스택으로 풀어서 문자열은 그대로 결과 큐에 넣고 연산자는 스택에 담고 괄호나 + - 가 나올 때 따로 처리해주는 방식으로 했었는데
- * 좌변, 연산자, 우변 식으로 세 갈래로 나눠서 재귀적으로 풀어보면 좀 더 간단하게 풀 수 있을 것 같아서 바꿔봄
- * result는 ArrayList로 선언하여 하나씩 뒤로 추가할 수 있게끔 함
- * 근데 단순히 변 처리식으로 함수를 만들어서 재귀적 접근하면 안에서 if문으로 처리하는게 기존 스택하는거랑 큰 차이가 없음
- * 우선순위를 세 개로 나눠서 처리하였다
- */
+import java.util.*;
 
 public class Main {
-    static int pos=0;
-    static List<Character> result = new ArrayList<>();
-    static String s;
+    static int[][] green = new int[6][4];
+    static int[][] blue = new int[4][6];
+    static int score = 0;
 
-    static void solution1(){
-        solution2();
-        while(pos<s.length() && (s.charAt(pos) =='+'||s.charAt(pos)=='-')){
-            char temp = s.charAt(pos++);
-            solution2();
-            result.add(temp);
+    public static void main(String[] args) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        int N = Integer.parseInt(br.readLine());
+
+        for (int i = 0; i < N; i++) {
+            StringTokenizer st = new StringTokenizer(br.readLine());
+            int t = Integer.parseInt(st.nextToken());
+            int x = Integer.parseInt(st.nextToken());
+            int y = Integer.parseInt(st.nextToken());
+
+            dropGreen(t, y);
+            dropBlue(t, x);
+
+            clearGreen();
+            clearBlue();
+
+            lightGreen();
+            lightBlue();
+        }
+
+        int count = countBlocks();
+
+        System.out.println(score);
+        System.out.println(count);
+    }
+
+    // 초록 보드에 블록 떨어뜨리기
+    static void dropGreen(int t, int y) {
+        if (t == 1) {
+            int r = 0;
+            while (r + 1 < 6 && green[r + 1][y] == 0) {
+                r++;
+            }
+            green[r][y] = 1;
+        } else if (t == 2) {
+            int r = 0;
+            while (r + 1 < 6 && green[r + 1][y] == 0 && green[r + 1][y + 1] == 0) {
+                r++;
+            }
+            green[r][y] = 1;
+            green[r][y + 1] = 1;
+        } else { // t == 3
+            int r = 1; // 세로 블록의 아래 칸 기준
+            while (r + 1 < 6 && green[r + 1][y] == 0) {
+                r++;
+            }
+            green[r][y] = 1;
+            green[r - 1][y] = 1;
         }
     }
 
-    static void solution2(){
-        solution3();
-        while(pos<s.length() && (s.charAt(pos)=='*'||s.charAt(pos)=='/')){
-            char temp = s.charAt(pos++);
-            solution3();
-            result.add(temp);
+    // 파랑 보드에 블록 떨어뜨리기
+    static void dropBlue(int t, int x) {
+        if (t == 1) {
+            int c = 0;
+            while (c + 1 < 6 && blue[x][c + 1] == 0) {
+                c++;
+            }
+            blue[x][c] = 1;
+        } else if (t == 2) {
+            // 초록의 세로 2x1 -> 파랑에서는 가로 1x2
+            int c = 1; // 가로 블록의 오른쪽 칸 기준
+            while (c + 1 < 6 && blue[x][c + 1] == 0) {
+                c++;
+            }
+            blue[x][c] = 1;
+            blue[x][c - 1] = 1;
+        } else { // t == 3
+            // 초록의 가로 1x2 -> 파랑에서는 세로 2x1
+            int c = 0;
+            while (c + 1 < 6 && blue[x][c + 1] == 0 && blue[x + 1][c + 1] == 0) {
+                c++;
+            }
+            blue[x][c] = 1;
+            blue[x + 1][c] = 1;
         }
     }
 
-    static void solution3(){
-        if(s.charAt(pos)=='('){
-            pos++; // (는 아예 걍 미처리
-            solution1(); // 괄호 내부 식 처리
-            pos++; // 닫는 괄호도 미처리
-        }else{
-            result.add(s.charAt(pos++));
+    // 초록 보드에서 꽉 찬 행 제거
+    static void clearGreen() {
+        for (int r = 2; r < 6; r++) {
+            boolean full = true;
+            for (int c = 0; c < 4; c++) {
+                if (green[r][c] == 0) {
+                    full = false;
+                    break;
+                }
+            }
+
+            if (full) {
+                score++;
+                removeGreenRow(r);
+                r--; // 같은 행 다시 검사
+            }
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
-        s = bf.readLine();
-        solution1();
-        for(char c : result){
-            bw.write(c);
+    static void removeGreenRow(int row) {
+        for (int r = row; r >= 1; r--) {
+            for (int c = 0; c < 4; c++) {
+                green[r][c] = green[r - 1][c];
+            }
         }
-        bw.write("\n");
-        bw.flush();
-        bw.close();
+        for (int c = 0; c < 4; c++) {
+            green[0][c] = 0;
+        }
+    }
+
+    // 파랑 보드에서 꽉 찬 열 제거
+    static void clearBlue() {
+        for (int c = 2; c < 6; c++) {
+            boolean full = true;
+            for (int r = 0; r < 4; r++) {
+                if (blue[r][c] == 0) {
+                    full = false;
+                    break;
+                }
+            }
+
+            if (full) {
+                score++;
+                removeBlueCol(c);
+                c--; // 같은 열 다시 검사
+            }
+        }
+    }
+
+    static void removeBlueCol(int col) {
+        for (int c = col; c >= 1; c--) {
+            for (int r = 0; r < 4; r++) {
+                blue[r][c] = blue[r][c - 1];
+            }
+        }
+        for (int r = 0; r < 4; r++) {
+            blue[r][0] = 0;
+        }
+    }
+
+    // 초록 연한 영역 처리
+    static void lightGreen() {
+        int cnt = 0;
+        for (int r = 0; r <= 1; r++) {
+            boolean exists = false;
+            for (int c = 0; c < 4; c++) {
+                if (green[r][c] == 1) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (exists) cnt++;
+        }
+
+        while (cnt-- > 0) {
+            for (int r = 5; r >= 1; r--) {
+                for (int c = 0; c < 4; c++) {
+                    green[r][c] = green[r - 1][c];
+                }
+            }
+            for (int c = 0; c < 4; c++) {
+                green[0][c] = 0;
+            }
+        }
+    }
+
+    // 파랑 연한 영역 처리
+    static void lightBlue() {
+        int cnt = 0;
+        for (int c = 0; c <= 1; c++) {
+            boolean exists = false;
+            for (int r = 0; r < 4; r++) {
+                if (blue[r][c] == 1) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (exists) cnt++;
+        }
+
+        while (cnt-- > 0) {
+            for (int c = 5; c >= 1; c--) {
+                for (int r = 0; r < 4; r++) {
+                    blue[r][c] = blue[r][c - 1];
+                }
+            }
+            for (int r = 0; r < 4; r++) {
+                blue[r][0] = 0;
+            }
+        }
+    }
+
+    // 남아 있는 블록 개수 세기
+    static int countBlocks() {
+        int cnt = 0;
+        for (int r = 0; r < 6; r++) {
+            for (int c = 0; c < 4; c++) {
+                if (green[r][c] == 1) cnt++;
+            }
+        }
+        for (int r = 0; r < 4; r++) {
+            for (int c = 0; c < 6; c++) {
+                if (blue[r][c] == 1) cnt++;
+            }
+        }
+        return cnt;
     }
 }
