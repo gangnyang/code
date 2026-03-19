@@ -97,23 +97,36 @@ public class Main19235 {
 
             // 2. 한 줄이 가득 찼을 때 처리 및 점수 획득
             // 파란색 보드 줄 삭제 로직
-            for(int i=6; i>=3; i--){
-                if(blue[i][0]!=0 && blue[i][1]!=0 && blue[i][2]!=0 && blue[i][3]!=0){
-                    blue[i][0] = 0; blue[i][1] = 0; blue[i][2] = 0; blue[i][3] = 0;
-                    gravity(blue);
-                    i=7; // 삭제 후 처음부터 다시 검사하기 위해 인덱스 복구
-                    score++;
+            while(true) {
+                boolean isCleared = false;
+                // 1. 꽉 찬 줄을 모두 찾아서 한 번에 지움
+                for(int i=6; i>=3; i--){
+                    if(blue[i][0]!=0 && blue[i][1]!=0 && blue[i][2]!=0 && blue[i][3]!=0){
+                        blue[i][0] = 0; blue[i][1] = 0; blue[i][2] = 0; blue[i][3] = 0;
+                        score++;
+                        isCleared = true;
+                    }
                 }
+                // 2. 지워진 줄이 하나도 없으면 탈출
+                if(!isCleared) break;
+
+                // 3. 다 지우고 나서 한 방에 중력 적용!
+                gravity(blue);
             }
 
             // 초록색 보드 줄 삭제 로직
-            for(int i=6; i>=3; i--){
-                if(green[i][0]!=0 && green[i][1]!=0 && green[i][2]!=0 && green[i][3]!=0){
-                    green[i][0] = 0; green[i][1] = 0; green[i][2] = 0; green[i][3] = 0;
-                    gravity(green);
-                    i=7;
-                    score++;
+            while(true) {
+                boolean isCleared = false;
+                for(int i=6; i>=3; i--){
+                    if(green[i][0]!=0 && green[i][1]!=0 && green[i][2]!=0 && green[i][3]!=0){
+                        green[i][0] = 0; green[i][1] = 0; green[i][2] = 0; green[i][3] = 0;
+                        score++;
+                        isCleared = true;
+                    }
                 }
+                if(!isCleared) break;
+
+                gravity(green);
             }
 
             // 3. 연한 색 구역(인덱스 2)에 블록이 있는지 확인 후 밀어내기
@@ -173,7 +186,17 @@ public class Main19235 {
                             moved = true;
                         }
                         ii++;
-                    }else{
+                    }// 2. 세로 블록인 경우 (위 칸과 ID 동일)
+                    else if (i > 0 && board[i - 1][ii] == id) {
+                        // 아래 칸(현재 i)의 밑이 비어있으면 세트로 이동
+                        if (board[i + 1][ii] == 0) {
+                            board[i + 1][ii] = id;
+                            board[i][ii] = id; // 위 칸이 내려옴
+                            board[i - 1][ii] = 0; // 맨 위는 비워짐
+                            moved = true;
+                        }
+                    }
+                    else{
                         if(board[i+1][ii]==0){
                             board[i+1][ii] = id;
                             board[i][ii] = 0;
